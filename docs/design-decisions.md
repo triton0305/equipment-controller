@@ -226,4 +226,3 @@ STOP이 정상 완료와 유사한 상태 표시로 이어지는 점이 문제�
 
 관련: [CLI](cli.md), [Process Control](process-control.md), [Troubleshooting](troubleshooting.md), [Verification Report](verification.md).
 
-초기 설계 논의와 사용자·ChatGPT·Codex의 상세 역할 이력은 [초기 설계·협업 기록](design-history.md)에 별도로 보존합니다.
