@@ -125,7 +125,7 @@ PTY에 연결한 정상/수신공백→자동 reconnect 시험에서도 Ctrl+C �
 
 일부 실행에는 partial / malformed telemetry가 있었고, 별도 실행에는 Linux RX에서 약 1초 동안 byte가 관찰되지 않았습니다. USB/IP의 `urb->status -104`, `vhci unlink`는 정상 실행에서도 관찰돼 직접 원인으로 확정하지 않았습니다.
 
-별도 write 계측에서는 평소 약 0.1 ms의 write가 약 110 ms로 늘어나는 구간과 같은 service에서 5–6회 반복되는 output refresh를 관찰했습니다. `96cac56`은 일반 Sensor-driven 갱신을 batch 단위로 모으도록 수정했습니다. `batch_received` event도 RX timestamp를 해석할 때 함께 확인합니다.
+별도 write 계측에서는 평소 약 0.1 ms의 write가 약 110 ms로 늘어나는 구간과 같은 service에서 5–6회 반복되는 output refresh를 관찰했습니다. 사용자 제공 수정 전 계측 요약의 실제 `service()` 지연 구간은 약 548–658 ms입니다(110 ms × 5–6회 = 약 550–660 ms는 누적 계산 예시). `96cac56`은 일반 Sensor-driven 출력 갱신을 RX batch당 최대 1회로 모으도록 수정했으며, Safety Fault와 실제 명령 송신 경로는 유지했습니다. `batch_received` event도 RX timestamp를 해석할 때 함께 확인합니다.
 
 수정 후 기존 NUCLEO-F411RE–WSL 연결 환경에서 Output Coalescing 코드만 변경해 4회 재계측했습니다. 아래 값은 각 실행에서 기록한 최대값입니다.
 
@@ -136,7 +136,7 @@ PTY에 연결한 정상/수신공백→자동 reconnect 시험에서도 Ctrl+C �
 | fixed-03 | 1.071 ms | 0.039 ms | 11.192 ms |
 | fixed-04 | 0.339 ms | 0.089 ms | 10.470 ms |
 
-수정 전 관찰된 약 550–660 ms 수준의 누적 service 지연은 수정 후 4회 실행에서 재현되지 않았습니다. 다만 이 값은 **실장비 연결 상태에서 WSL Runtime을 계측한 결과**이며, STM32 GPIO의 물리 출력 반응시간을 직접 측정한 값은 아닙니다.
+수정 전 `service()` 실측 약 548–658 ms의 지연 구간은 수정 후 4회 실행에서 재현되지 않았습니다. 수정 후 최대 `service()` 시간은 1.768 ms, 최대 UART `write()` 시간은 0.209 ms입니다. 긴 write 지연이 관찰되지 않은 점과 일반 출력 갱신 횟수를 줄인 점을 구분해 기록합니다. 이 값은 **실장비 연결 상태에서 WSL Runtime을 계측한 결과**이며, STM32 GPIO의 물리 출력 반응시간을 직접 측정한 값은 아닙니다.
 
 Linux 관측만으로 STM32 TX / ST-LINK VCP / USB-IP 중 발생 계층을 특정할 수 없습니다. 후속 분석은 STM32 TX pin과 Linux RX를 같은 시간대에 계측하는 방식으로 관리합니다.
 

@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/STM32-NUCLEO_F411RE-03234B?style=flat-square" alt="NUCLEO-F411RE">
   <img src="https://img.shields.io/badge/Linux-WSL-FCC624?style=flat-square" alt="Linux WSL">
   <img src="https://img.shields.io/badge/UART-115200_8N1-087F8C?style=flat-square" alt="UART 115200 8N1">
-  <img src="https://img.shields.io/badge/Tests-Host_%2B_STM32_53%2F53_PASS-2E7D32?style=flat-square" alt="Host and STM32 tests 53/53 PASS">
+  <img src="https://img.shields.io/badge/Tests-Host_CTest_53%2F53_PASS-2E7D32?style=flat-square" alt="Host CTest 53/53 PASS">
 </p>
 
 <p align="center">
@@ -57,7 +57,8 @@ Raw frame·계측·Host regression·실제 보드 결과를 연결해 원인과 
 | 범위 | 결과 |
 |---|---|
 | Controller / Protocol / Transport / Firmware Host regression | 53/53 PASS |
-| UART diagnostics / output coalescing / CLI / IPC | HOST VERIFIED |
+| UART diagnostics / IPC 예외 처리 | HOST VERIFIED |
+| UART output coalescing | HOST VERIFIED · 실장비 연결 WSL 처리시간 계측 완료 |
 | Board · GPIO · Door / E-Stop · Pressure ADC · 양방향 UART | HW VERIFIED |
 | DHT11 Decoder / Production UART / Linux 실제값 | HW VERIFIED |
 | 30초 Pump / Heater 순서·출력·정상 완료 | HW VERIFIED |

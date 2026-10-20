@@ -145,13 +145,15 @@ Telemetry 공백, 관측 구간의 Linux polling 연속성과 CommunicationFault
 | write 약 110 ms · 5회 | service 약 550 ms |
 | write 약 110 ms · 6회 | service 약 660 ms |
 
+위 표의 550–660 ms는 개별 write 지연과 송신 횟수를 곱한 **누적 계산 예시**입니다. 이와 별도로 사용자 제공 수정 전 계측 요약에서 실제 `service()` 지연 구간은 **약 548–658 ms**로 기록됐습니다.
+
 긴 write와 동일 batch 내부의 반복 output refresh가 결합해 service 처리시간이 커졌습니다. 수정 대상으로 특정한 원인은 sensor line별로 반복하던 출력 갱신 구조입니다.
 
 ### 조치
 
 [96cac56 — perf: coalesce UART output updates](https://github.com/triton0305/equipment-controller/commit/96cac56ecaff7c727dc7a41ddd333069a2f4c595)에서 일반 Sensor-driven output refresh를 batch 단위로 모았습니다.
 
-Sensor 값을 반영한 뒤 필요한 출력 묶음을 송신합니다. 새로운 정상 batch에서는 출력이 같아도 MCU command freshness를 refresh합니다. Safety Fault는 다음 RX event 전에 안전 출력을 송신하고 실제 제어 명령의 송신 경로도 유지합니다.
+Sensor 값을 반영한 뒤 일반 출력 갱신을 RX batch당 최대 1회로 모아 송신합니다. 새로운 정상 batch에서는 출력이 같아도 MCU command freshness를 refresh합니다. Safety Fault는 다음 RX event 전에 안전 출력을 송신하고 실제 제어 명령의 송신 경로도 유지합니다.
 
 ### 검증과 결과
 
@@ -168,7 +170,7 @@ Host의 batch / delay / timestamp / safety / commands 시나리오에서 송신 
 | fixed-03 | 1.071 ms | 0.039 ms | 11.192 ms |
 | fixed-04 | 0.339 ms | 0.089 ms | 10.470 ms |
 
-수정 전 관찰된 약 550–660 ms 수준의 누적 service 지연은 수정 후 4회 실행에서 재현되지 않았습니다. 다만 이 값은 **실장비 연결 상태에서 WSL Runtime을 계측한 결과**이며, STM32 GPIO의 물리 출력 반응시간을 직접 측정한 값은 아닙니다.
+사용자 제공 수정 전 실측 `service()` 약 548–658 ms의 지연 구간은 수정 후 4회 계측에서 재현되지 않았으며, 수정 후 `service()` 최대값은 1.768 ms, 개별 UART `write()` 최대값은 0.209 ms였습니다. 수정 후에는 일반 출력 송신의 반복 횟수도 RX batch당 최대 1회로 감소했습니다(안전 출력과 실제 제어 명령 경로는 별도 유지). 이 수치는 **실장비 연결 상태에서 WSL Runtime을 계측한 결과**이며, STM32 GPIO의 물리 출력 반응시간을 직접 측정한 값은 아닙니다.
 
 **Repeated Output Refresh RESOLVED / Coalescing IMPLEMENTED / HOST VERIFIED / 실장비 연동 계측 완료**
 

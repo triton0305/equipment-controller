@@ -135,10 +135,10 @@ Host synchronization 수정은 `Disconnected → Synchronizing → fresh DOOR �
 
 일반 Sensor-driven 출력 갱신을 RX batch 단위로 모았습니다. 새 batch의 command liveness refresh, Fault 안전 출력과 실제 명령 송신 경로를 유지했습니다.
 
-Host는 batch, 지연된 write, 수신 timestamp 유지, Safety 우선 송신, 명령 처리를 검증했습니다. 110 ms 지연을 주입한 조건에서 반복 write 누적을 줄이는 동작을 확인했습니다.
+Host는 batch, 지연된 write, 수신 timestamp 유지, Safety 우선 송신, 명령 처리를 검증했습니다. 110 ms 지연을 주입한 조건에서 일반 출력 갱신을 RX batch당 최대 1회로 줄이면서 Safety Fault와 실제 제어 명령 경로를 유지하는 동작을 확인했습니다.
 
 **판정: HOST VERIFIED / 실장비 연결 WSL Runtime 정량 계측 완료**  
-동일한 NUCLEO-F411RE–WSL 연결 환경에서 Output Coalescing 코드만 수정한 후 4회 재계측했습니다. 실행별 최대 service 시간은 0.339–1.768 ms, 최대 UART write 시간은 0.039–0.209 ms, 최대 poll 간격은 10.470–11.917 ms였습니다. 수정 전 약 550–660 ms 수준의 누적 service 지연은 수정 후 실행에서 재현되지 않았습니다.
+동일한 NUCLEO-F411RE–WSL 연결 환경에서 Output Coalescing 코드만 수정한 후 4회 재계측했습니다. 사용자 제공 수정 전 계측 요약의 `service()` 실측 지연 구간은 약 548–658 ms이며, 110 ms × 5–6회로 산출한 약 550–660 ms와는 구분합니다. 수정 후 실행별 최대 `service()` 시간은 0.339–1.768 ms, 최대 UART `write()` 시간은 0.039–0.209 ms, 최대 poll 간격은 10.470–11.917 ms였습니다. 수정 전의 긴 `service()` 지연은 수정 후 4회 실행에서 재현되지 않았습니다.
 
 이는 **Linux Runtime 처리 지연의 계측 결과**이며, STM32 GPIO 물리 출력 반응시간의 정량 계측을 의미하지 않습니다. 실행별 수치는 [Troubleshooting](troubleshooting.md#4-repeated-uart-write-stall--output-coalescing)에 기록합니다.
 
