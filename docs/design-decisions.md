@@ -68,27 +68,106 @@ READY 범위를 조금 벗어난 RUN 측정만으로 Critical Error를 만들지
 
 사용자는 이전 논의에서 정지 기준·복구 조건·공정 조건을 분리하도록 확인했습니다. ChatGPT는 그 의미를 구분해 정책으로 정리했고 Codex는 measurement count와 시작 gate를 각각 구현했습니다. 현재 정책은 [Process Control](process-control.md)에 기록합니다.
 
-## 4. CommunicationFault와 E-Stop, Linux와 MCU 책임
+## 4. CommunicationFault와 E-Stop, Linux와 STM32의 제어 책임
 
-실제 통신 단절 시험에서 관찰 흐름을 사용자가 정정했습니다.
+### 기존 설계와 STM32 Command-loss Fail-safe
+
+초기 구조에서는 Linux Controller가 장비 상태와 출력 명령을 결정하고, STM32가 UART로 전달받은 명령을 실제 GPIO에 적용했습니다.
+
+그러나 UART 통신이 끊어지면 Linux에서 출력 OFF 명령을 생성하더라도 STM32에 전달할 수 없으므로, 마지막으로 적용된 출력 상태가 유지될 위험이 있었습니다.
+
+이를 해결하기 위해 STM32에 독립적인 Command-loss Fail-safe를 먼저 구현했습니다.
+
+- 마지막 유효한 전체 제어 명령 수신 시각을 기준으로 통신 상태 감시
+- 약 1000ms 동안 정상적인 제어 명령이 없으면 Pump / Heater / RUN 출력 차단
+- Fail-safe latch를 적용해 통신 복구 직후의 위험한 ON 명령 거부
+- 안전한 전체 출력 명령을 수신한 뒤 latch 해제
+- 이후 별도의 정상 명령을 통해 출력 재활성화 허용
+
+이 기능은 Linux의 State Machine과 독립적으로 STM32에서 동작하며, 실제 NUCLEO-F411RE에서 출력 차단과 재동기화를 확인했습니다.
+
+관련 Commit: `451c19c feat(stm32): add command-loss fail-safe`
+
+다만 이 단계에서는 통신 단절 시 Pump / Heater / RUN을 차단했지만, RED LED는 기존 Linux에서 전달한 Error 표시 상태를 유지하는 구조였습니다. 따라서 통신 단절 자체를 STM32가 독립적으로 RED LED에 표시하지는 않았습니다.
+
+### 실제 통신 단절 시험과 문제 제기
+
+사용자는 실제 Hardware에서 UART 통신을 차단한 뒤 출력과 상태 표시의 변화를 관찰했습니다.
 
 > **발언 요지:** “아니, 실제로는 CommunicationFault 발생 → Shutdown → 통신 재연결 → Error(빨간 LED/부저) → RESET으로 해제되는 순서였어.”
 
-통신이 끊긴 경로로 새로운 표시 명령을 보낼 수 있는지 사용자가 질문했습니다.
+이 과정에서 STM32가 독립적으로 출력을 차단하는 것은 확인했지만, Error 표시가 Linux의 통신 복구 이후에 이루어지는 점을 확인했습니다.
+
+이후 사용자는 통신이 끊어진 상태에서 Linux가 새로운 LED 제어 명령을 전달할 수 있는지 질문했습니다.
 
 > **발언 요지:** “통신이 끊어지면 Linux에서 보낸 명령이 STM32에 전달되지 않으니까, LED도 켤 수 없는 거 아니야?”
 
-최종 책임은 다음과 같습니다.
+기존 구조에서는 Linux가 통신 장애를 감지하더라도 UART가 끊어진 동안에는 새로운 RED LED ON 명령을 STM32에 전달할 수 없었습니다.
+
+따라서 독립적인 출력 차단뿐 아니라, 통신 장애를 나타내는 RED LED 역시 STM32가 직접 제어할 필요가 있다는 설계 요구가 추가됐습니다.
+
+### STM32 Local RED 및 표시 제어권 인계 구현
+
+기존 Command-loss Fail-safe는 유지하면서, STM32가 통신 단절 상태를 독립적으로 표시하도록 기능을 보완했습니다.
+
+**1. 통신 단절 시 STM32 Local RED 점등**
+
+정상 제어 세션이 성립한 이후 약 1000ms 동안 유효한 제어 명령이 수신되지 않으면 STM32가 직접 RED LED를 켜도록 변경했습니다.
+
+이 동작은 Linux의 새로운 명령 없이 STM32 내부 Timeout 판단만으로 수행됩니다.
+
+또한 전원 인가 직후 명령을 아직 받지 않은 Cold boot 상태와 정상 통신 이후 발생한 Communication loss를 구분해, 최초 부팅 시 불필요하게 RED LED가 켜지지 않도록 했습니다.
+
+**2. 통신 재연결 중 RED 표시 유지**
+
+UART 통신이 복구되더라도 초기 SAFE 명령이나 일부 상태 명령만으로 RED LED가 꺼지지 않도록 했습니다.
+
+기존 Linux ERROR 상태가 아직 반영되지 않은 상황에서 RED LED가 먼저 꺼지는 것을 방지하기 위한 조치입니다.
+
+**3. Linux로 표시 제어권 인계**
+
+STM32가 안전한 전체 제어 명령을 정상 수신하고, 이후 Linux의 유효한 운영 상태 명령을 확인하면 Local RED 제어권을 Linux로 인계하도록 했습니다.
+
+이 과정에서 Linux가 ERROR 상태를 전달하면 RED 표시를 유지하고, 이후 정상적인 RESET 절차를 거쳐 Linux가 IDLE 상태를 전달하면 해당 상태 표시를 적용할 수 있도록 구성했습니다.
+
+또한 RED 표시의 인계 과정에서 GPIO가 순간적으로 LOW로 전환되지 않도록 ERROR 상태의 출력 적용 방식도 수정했습니다.
+
+**4. 기존 Alarm 및 Buzzer 정책 유지**
+
+STM32의 Local Command-loss Timeout은 물리 출력 차단과 RED 표시를 담당하지만, CommunicationFault Alarm의 판단과 ERROR latch 및 RESET 정책은 Linux Controller가 계속 담당합니다.
+
+STM32는 Local Timeout 발생만으로 Buzzer를 새롭게 켜지 않으며, 물리 E-Stop도 CommunicationFault와 별개의 Safety 입력으로 유지했습니다.
+
+관련 Commit: `4f576d2 fix: preserve STM32 communication-loss RED through handoff`
+
+### 최종 제어 책임
 
 | 구성 | 책임 |
 |---|---|
-| STM32 | 물리 I/O · 독립 command-loss timeout · 출력 차단 · local RED |
-| Linux | 상위 State Machine · CommunicationFault Alarm · Error / RESET |
-| 물리 E-Stop | EmergencyStop 원인의 Safety input |
+| Linux Controller | 상위 State Machine · CommunicationFault Alarm · 공정 제어 · ERROR latch / RESET |
+| STM32 | 물리 I/O · 독립 Command-loss Timeout · Pump / Heater / RUN 출력 차단 · Fail-safe latch |
+| STM32 Local RED | 통신 단절 시 독립 RED 점등 · 재연결 중 표시 유지 · Linux로 표시 제어권 인계 |
+| 물리 E-Stop | CommunicationFault와 구분되는 독립적인 EmergencyStop Safety 입력 |
 
-사용자는 실제 local shutdown과 후속 Linux ERROR 표시 순서를 확인하고 통신 단절 표시 요구를 정리했습니다. ChatGPT는 Alarm 원인과 물리 출력 책임을 분리했습니다. Codex는 local fail-safe / latch / RED ownership과 회귀를 구현했습니다.
+이번 변경으로 정상 통신 중에는 Linux가 출력과 장비 상태를 결정하고, 통신 단절 시에는 STM32가 독립적으로 위험 출력을 차단하고 RED LED를 표시하도록 책임을 분리했습니다.
 
-Command-loss 출력 차단은 HW VERIFIED입니다. 최신 Local RED 인계와 timing의 Host / HW 범위는 [검증 보고서](verification.md)에서 구분합니다.
+사용자는 실제 Hardware에서 통신 단절과 복구 순서를 관찰하고, Linux 명령에 의존하는 LED 제어의 한계를 지적해 Local RED 기능의 필요성을 제기했습니다.
+
+ChatGPT는 Linux와 STM32의 책임을 분리하고, 통신 단절 표시와 복구 과정에서의 제어권 인계 조건을 구체화했습니다. Codex는 STM32 Local RED, 표시 유지, 제어권 인계 로직과 관련 회귀 테스트를 구현했습니다.
+
+### 검증 결과
+
+- **STM32 Command-loss 출력 차단:** HOST / HW VERIFIED
+- **Fail-safe latch 및 안전한 재동기화:** HOST / HW VERIFIED
+- **STM32 Local RED 점등:** HOST VERIFIED
+- **재연결 중 RED 유지 및 Linux 제어권 인계:** HOST VERIFIED
+- **최신 Local RED의 정확한 실물 점등 시점:** HW PENDING
+
+기존 Command-loss 안전정지는 실제 보드에서 검증했으며, 이후 추가된 Local RED와 표시 제어권 인계는 Fake HAL 기반 Host 회귀 테스트에서 검증했습니다.
+
+최신 Local RED 기능의 정확한 점등 시점과 인계 동작에 대한 별도 최종 Hardware 검증은 완료된 것으로 판단하지 않습니다.
+
+상세 검증 범위는 [검증 보고서](verification.md)에서 구분합니다.
 
 ## 5. UART 이상을 원인 미확정 상태로 관리
 
