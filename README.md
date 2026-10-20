@@ -85,7 +85,7 @@ Pump / Heater는 LED 출력으로 확인했습니다. CLI snapshot은 Runtime이
 
 ### Full Process Sequence
 
-[▶ 전체 30초 공정 시퀀스 영상 보기 (YouTube)](https://youtu.be/wmteknC8YiA?si=Xb3dmzllWdR1qAxc)
+[▶ 전체 30초 공정 시퀀스 영상 보기 (YouTube)](https://youtu.be/Ir4n1Hiku9k?si=CwwfNtbKGaZDQCbb)
 
 READY qualification 이후 START 수락과 동시에 RUN에 진입하고, 6초 간격으로 Pump / Heater 출력을 제어한 뒤 약 30초에 자동 종료되는 공정 흐름을 확인한 영상입니다.
 
