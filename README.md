@@ -87,7 +87,7 @@ Pump / Heater는 LED 출력으로 확인했습니다. CLI snapshot은 Runtime이
 
 [▶ 전체 30초 공정 시퀀스 영상 보기 (YouTube)](https://youtu.be/wmteknC8YiA?si=Xb3dmzllWdR1qAxc)
 
-READY qualification 이후 START부터 Pump / Heater Sequence, RUN 진입, 약 30초 후 자동 종료까지 전체 공정 흐름을 확인한 영상입니다.
+READY qualification 이후 START 수락과 동시에 RUN에 진입하고, 6초 간격으로 Pump / Heater 출력을 제어한 뒤 약 30초에 자동 종료되는 공정 흐름을 확인한 영상입니다.
 
 ## Key Features
 
@@ -135,7 +135,7 @@ Core 상태는 Idle / Run / Error를 중심으로 운전합니다. READY는 Idle
 
 ### READY / START
 
-Idle · Armed, UART Operational / 정상 통신, fresh Door CLOSED / E-Stop OFF, 유효한 Temperature **20~40°C**와 Pressure ADC **1000~2000**을 **5초 연속** 유지해야 START가 허용됩니다.
+Idle · Armed, UART Operational / 정상 통신, fresh Door CLOSED / E-Stop OFF, 유효한 Temperature **20–40°C**와 Pressure ADC **1000–2000**을 **5초 연속** 유지해야 START가 허용됩니다.
 
 조건 이탈이나 invalid / stale은 qualification을 취소합니다. 정상 복귀 후 새 5초가 필요하며 START 입력 순간에도 현재 조건을 재검사합니다. Humidity는 Critical Safety에 사용합니다.
 
@@ -198,7 +198,7 @@ STM32는 순서가 맞는 6-command complete refresh를 감시합니다. 정상 
 
 | 신호 | Pin / 동작 |
 |---|---|
-| Pressure ADC | PA0 / ADC1_IN0 · raw 0~4095 |
+| Pressure ADC | PA0 / ADC1_IN0 · raw 0–4095 |
 | USART2 TX / RX | PA2 / PA3 |
 | Door | PB0 · LOW=CLOSED |
 | E-Stop | PB1 · LOW=ON |

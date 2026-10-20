@@ -12,8 +12,8 @@ READY는 Runtime이 관리하는 시작 자격 표시입니다. Core 상태는 I
 | Cycle | Armed |
 | UART | Operational · Communication 정상 |
 | Door / E-Stop | fresh Door CLOSED · E-Stop OFF |
-| Temperature | valid / fresh · 20~40°C, 양 끝 포함 |
-| Pressure | valid / fresh · ADC 1000~2000, 양 끝 포함 |
+| Temperature | valid / fresh · 20–40°C, 양 끝 포함 |
+| Pressure | valid / fresh · ADC 1000–2000, 양 끝 포함 |
 | 연속 유지 | 모든 조건을 5초 동안 유지 |
 
 Temperature freshness는 5초, Pressure freshness는 1초입니다. 조건 이탈, INVALID, malformed 측정, freshness 만료 또는 통신 장애는 qualification을 취소합니다. 정상 조건으로 돌아오면 새로운 연속 5초가 필요합니다. START 입력 순간에도 현재 조건을 다시 확인합니다.

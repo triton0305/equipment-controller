@@ -85,7 +85,7 @@ State=Idle Ready=1 Armed=1 Rearm=0 Alarm=0 SequenceStep=0 Operational=1 Communic
 ```
 
 `State`는 Idle / Ready / Run / Error이며 `Ready`는 별도의 READY qualification
-indicator입니다. `Armed`는 재시작 허용 상태입니다. `Rearm`은 0=Armed,
+indicator입니다. 현재 READY 자격은 `State=Idle`에서 `Ready=1`로 표시하고, START 수락 시 `State=Run`으로 전환합니다. `Armed`는 재시작 허용 상태입니다. `Rearm`은 0=Armed,
 1=WaitOpen, 2=WaitClose이고, `SequenceStep`과 `Alarm`은 기존 enum 숫자입니다.
 `Operational`은 Runtime이 보유한 동기화 phase, `CommunicationOK`는 보유 통신 유효성입니다. 현재 통신 상태는 두 필드를 함께 확인합니다.
 Pressure는 ADC raw count, Temperature는 °C, Humidity는 %입니다.

@@ -1,8 +1,8 @@
 # Equipment Controller — Verification Report
 
 **검증 기준일:** 2026-10-13  
-**GitHub main:** `c5cbb81 feat: add independent control CLI`  
-**최신 자동 테스트:** CTest **53/53 PASS**
+**소프트웨어 검증 기준선:** `c5cbb81 feat: add independent control CLI`  
+**자동 테스트:** CTest **53/53 PASS**
 
 개발 (14)·(15)·(17)의 실행 기록과 사용자 제공 실물 검증을 통합했습니다. Host 자동 테스트, 실제 보드의 정상 동작, 원인 미확정 이상 관찰과 추가 계측 항목을 구분합니다.
 

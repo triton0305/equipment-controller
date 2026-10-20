@@ -26,9 +26,9 @@ HUMIDITY:46.2
 
 ## Decoder
 
-실제 frame `2D-02-19-09-51`은 45.2 %RH / 25.9°C이고 checksum은 0x51입니다. Humidity decimal byte 0~9를 허용하며 `raw[0] * 10 + raw[1]`로 0.1 단위 값을 계산합니다.
+실제 frame `2D-02-19-09-51`은 45.2 %RH / 25.9°C이고 checksum은 0x51입니다. Humidity decimal byte 0–9를 허용하며 `raw[0] * 10 + raw[1]`로 0.1 단위 값을 계산합니다.
 
-기존 decoder의 checksum과 최종 범위 검사(-20~60°C, 5~95%RH)를 유지합니다. Linux Humidity parser는 0~100% 범위를 검사하고 NaN / Inf, 빈 값과 숫자 뒤 잡문자를 거부합니다. 분석 과정은 [Troubleshooting](troubleshooting.md)에 기록합니다.
+기존 decoder의 checksum과 최종 범위 검사(-20–60°C, 5–95%RH)를 유지합니다. Linux Humidity parser는 0–100% 범위를 검사하고 NaN / Inf, 빈 값과 숫자 뒤 잡문자를 거부합니다. 분석 과정은 [Troubleshooting](troubleshooting.md)에 기록합니다.
 
 ## 측정과 Freshness
 
