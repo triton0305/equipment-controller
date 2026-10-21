@@ -18,7 +18,7 @@
   <a href="#build">Build</a>
 </p>
 
-# Equipment Controller
+# STM32·Embedded Linux 기반 장비 제어 시스템
 
 **STM32에서 수집한 스위치·ADC·DHT11 데이터를 UART로 받아 공정 상태와 안전 조건을 판단하고, 장비 출력을 제어하는 Controller입니다.**
 
